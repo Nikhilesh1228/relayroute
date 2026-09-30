@@ -1,59 +1,48 @@
-# RelayRoute
+# RelayRoute: Real-Time Delivery Tracking Backend
 
-RelayRoute is an original backend project for real-time delivery coordination. It combines
-delivery lifecycle APIs, courier geospatial presence, WebSocket chat, Kafka-ready domain
-events, and an audited relay-handoff workflow where one courier can transfer an active
-delivery to another courier without losing the delivery timeline.
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-WebSockets-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Redis GEO](https://img.shields.io/badge/Redis-GEO%20Indexing-DC382D?style=flat&logo=redis&logoColor=white)](https://redis.io/)
+[![Kafka](https://img.shields.io/badge/Kafka-Outbox%20Pattern-231F20?style=flat&logo=apachekafka&logoColor=white)](https://kafka.apache.org/)
 
-## Why this project exists
+RelayRoute is an asynchronous, event-driven backend service designed for real-time courier tracking, driver presence management, live customer updates, and message routing.
 
-Most delivery demos stop at CRUD. RelayRoute focuses on backend decisions interviewers
-actually ask about:
+## 📌 System Architecture
+RelayRoute solves the problem of high-frequency location updates and reliable state delivery through:
+- **Redis GEO Spatial Indexing:** Fast store and lookup of active courier latitude/longitude coordinates.
+- **WebSocket Streaming Gateway:** Bi-directional live location broadcasts to customer web/mobile interfaces.
+- **Transactional Outbox Pattern:** Ensures zero message loss when relaying state changes to Apache Kafka event streams.
+- **Multi-Store Persistence:** PostgreSQL for orders and accounts, MongoDB for real-time delivery chat logs.
 
-- role-based JWT authentication for customers, couriers, and dispatchers
-- idempotent delivery creation for safe retries
-- optimistic version checks for concurrent assignment/status updates
-- Redis GEO for nearby-courier lookup
-- MongoDB for append-only delivery chat history
-- Kafka outbox events for reliable event streaming
-- WebSocket chat with access checks against the delivery owner/courier/dispatcher
+---
 
-## Tech stack
+## ✨ Key Features
+- **Live Location Streaming:** Low-latency WebSockets handling driver updates and consumer subscriptions.
+- **Spatial Proximity Queries:** Redis GEO commands (`GEOADD`, `GEORADIUS`) for nearest courier dispatch.
+- **Guaranteed Event Delivery:** Relays database mutations to Kafka via transactional outbox workers.
+- **Secured Communications:** JWT authentication for WebSocket handshake and REST endpoints.
 
-- Python 3.12, FastAPI, Pydantic, SQLAlchemy, Alembic
-- PostgreSQL in Docker, SQLite for local tests
-- Redis GEO, MongoDB, Kafka
-- Pytest, Ruff, mypy, Docker, GitHub Actions
+---
 
-## Run locally
+## 🛠️ Tech Stack
+- **Core Framework:** Python, FastAPI, WebSockets
+- **State & Messaging:** Redis (GEO), PostgreSQL, MongoDB, Apache Kafka
+- **Migrations & Tools:** Alembic, SQLAlchemy, Docker Compose
 
-```bash
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -e ".[dev]"
-pytest
-uvicorn app.main:app --reload
-```
+---
 
-API docs open at `http://localhost:8000/docs`.
+## 🚀 Quick Start
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Nikhilesh1228/relayroute.git
+   cd relayroute
+   ```
 
-## Run the full stack
+2. Launch environment with Docker Compose:
+   ```bash
+   docker compose up --build -d
+   ```
 
-```bash
-docker compose up --build
-```
-
-## Key API paths
-
-| Method | Path | Role | Purpose |
-| --- | --- | --- | --- |
-| POST | `/api/v1/auth/register` | public | Register customer or courier |
-| POST | `/api/v1/deliveries` | customer | Create a delivery with idempotency |
-| POST | `/api/v1/deliveries/{id}/assign` | dispatcher | Assign a courier |
-| POST | `/api/v1/deliveries/{id}/status` | courier/dispatcher | Move delivery status |
-| POST | `/api/v1/deliveries/{id}/handoffs` | courier | Propose relay handoff |
-| POST | `/api/v1/deliveries/handoffs/{offer_id}/accept` | courier | Accept relay handoff |
-| WS | `/api/v1/ws/deliveries/{id}/chat?token=...` | participant | Delivery chat |
-
-More details are in [`docs/architecture.md`](docs/architecture.md) and
-[`docs/interview-guide.md`](docs/interview-guide.md).
+3. Access Endpoints:
+   - REST Documentation: `http://localhost:8000/docs`
+   - WebSocket Connection: `ws://localhost:8000/ws/tracking/{delivery_id}`
